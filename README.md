@@ -9,3 +9,8 @@ A simple proof of concept proxy that changes the returned mime-type
 * Return more refined HTTP status codes on error
 
 Pull requests welcome!
+
+## LICENSE
+
+* AGPLv3
+  * https://www.gnu.org/licenses/agpl-3.0.en.html
