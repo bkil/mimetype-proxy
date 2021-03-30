@@ -5,13 +5,17 @@ if (isset($_SERVER["SERVER_PROTOCOL"])) {
   $proto = $_SERVER["SERVER_PROTOCOL"];
 }
 
-if (isset($_GET['mime']) && isset($_GET['url'])) {
+if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+    header($proto . ' 304 Not Modified');
+} else if (isset($_GET['mime']) && isset($_GET['url'])) {
   $url = $_GET['url'];
   if ($stream = fopen($url, 'r')) {
     $mime = $_GET['mime'];
     header("Content-type: " . $mime);
     header("Cache-Control: public, max-age=2592000, stale-while-revalidate=2592000, s-maxage=2592000");
     header("Content-Transfer-Encoding: binary");
+    header("Last-Modified: Tue, 30 Mar 2021 17:00:00 GMT");
+    header("Expires: Fri, 30 Apr 2021 17:00:00 GMT");
     ob_end_clean();
 
     fpassthru($stream);
