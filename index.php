@@ -9,6 +9,8 @@ if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
     header($proto . ' 304 Not Modified');
 } else if (isset($_GET['mime']) && isset($_GET['url'])) {
   $url = $_GET['url'];
+  $timeout = 20;
+  ini_set('default_socket_timeout', $timeout);
   if ($stream = fopen($url, 'r')) {
     $mime = $_GET['mime'];
     header("Content-type: " . $mime);
