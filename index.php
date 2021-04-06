@@ -1,6 +1,6 @@
 <?php
 
-function parseHeaders($headers) {
+function parseHeaders(iterable $headers): array {
   $parsed = array();
   foreach ($headers as $i => $line) {
     $f = explode(':', $line, 2);
@@ -18,7 +18,7 @@ function parseHeaders($headers) {
   return $parsed;
 }
 
-function asInt($str) {
+function asInt(string $str): int {
   $int = intval($str);
   if (($int === 0) && ($str !== "0")) {
     $int = -1;
@@ -26,7 +26,16 @@ function asInt($str) {
   return $int;
 }
 
-function openForDownload($url, $proto) {
+function exitFailure(string $statusLine, string $body = null): void {
+    header($statusLine);
+    if (isset($body)) {
+      header("Content-Type: text/plain");
+      echo $body;
+    }
+    exit();
+}
+
+function openForDownload(string $url, string $proto) {
   $timeout = 10;
   ini_set('default_socket_timeout', $timeout);
 
@@ -51,10 +60,7 @@ function openForDownload($url, $proto) {
   $stream = @fopen($url, 'r', false, $context);
 
   if (!isset($http_response_header[0])) {
-    header($proto . ' 504 Gateway Timeout');
-    header("Content-type: text/plain");
-    echo 'Unknown failure';
-    exit();
+    exitFailure($proto . ' 504 Gateway Timeout', 'Unknown failure');
   }
 
   $parsed = parseHeaders($http_response_header);
@@ -67,10 +73,7 @@ function openForDownload($url, $proto) {
     } else {
       $statusLine = '502 Bad Gateway';
     }
-    header($proto . ' ' . $statusLine);
-    header("Content-type: text/plain");
-    echo 'Download failed';
-    exit();
+    exitFailure($proto . ' ' . $statusLine, 'Download failed');
   }
 
   $contentLength = isset($parsed['CONTENT-LENGTH']) ? asInt($parsed['CONTENT-LENGTH']) : -1;
@@ -92,25 +95,16 @@ if (isset($_SERVER["SERVER_PROTOCOL"])) {
 
 $mime = "image/jpeg";
 if (isset($_GET['mime']) && ($mime != $_GET['mime'])) {
-  header($proto . ' 415 Unsupported Media Type');
-  header("Content-type: text/plain");
-  echo 'Invalid mime type';
-  exit();
+  exitFailure($proto . ' 415 Unsupported Media Type', 'Invalid mime type');
 }
 
 if (!isset($_GET['url'])) {
-  header($proto . ' 400 Bad Request');
-  header("Content-type: text/plain");
-  echo 'Missing parameter: url. This is a temporary humanitarian service running until the 8th of April.';
-  exit();
+  exitFailure($proto . ' 400 Bad Request', 'Missing parameter: url. This is a temporary humanitarian service running until the 8th of April.');
 }
 
 $url = $_GET['url'];
 if (preg_match($allowedUrl, $url) !== 1) {
-  header($proto . ' 451 Unavailable For Legal Reasons');
-  header("Content-type: text/plain");
-  echo 'Invalid url';
-  exit();
+  exitFailure($proto . ' 451 Unavailable For Legal Reasons', 'Invalid url');
 }
 
 $url = preg_replace("~^https://~i", "http://", $url);
@@ -122,16 +116,12 @@ if (isset($allowedUserAgent)) {
   }
 
   if (preg_match($allowedUserAgent, $userAgent) !== 1) {
-    header($proto . ' 403 Forbidden');
-    header("Content-type: text/plain");
-    echo 'Invalid User-Agent';
-    exit();
+    exitFailure($proto . ' 403 Forbidden', 'Invalid User-Agent');
   }
 }
 
 if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
-  header($proto . ' 304 Not Modified');
-  exit();
+  exitFailure($proto . ' 304 Not Modified');
 }
 
 $stream = openForDownload($url, $proto);
