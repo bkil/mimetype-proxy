@@ -27,15 +27,22 @@ function asInt(string $str): int {
 }
 
 function exitFailure(string $statusLine, string $body = null): void {
-    header($statusLine);
-    if (isset($body)) {
-      header("Content-Type: text/plain");
-      echo $body;
-    }
-    exit();
+  $proto = 'HTTP/1.0';
+  if (isset($_SERVER["SERVER_PROTOCOL"])) {
+    $proto = $_SERVER["SERVER_PROTOCOL"];
+  }
+
+  header($proto . ' ' . $statusLine);
+  if (isset($body)) {
+    header("Content-Type: text/html");
+    $msg = $body . ' (' . $statusLine . ')';
+    echo '<!DOCTYPE html><html><head><meta charset="utf-8" /><title>' . $msg . '</title></head>';
+    echo '<p><b> </b> </p><p><b> </b> ' . $msg . '</p><p><b> </b> </p></body></html>';
+  }
+  exit();
 }
 
-function openForDownload(string $url, string $proto) {
+function openForDownload(string $url) {
   $timeout = 10;
   ini_set('default_socket_timeout', $timeout);
 
@@ -60,7 +67,7 @@ function openForDownload(string $url, string $proto) {
   $stream = @fopen($url, 'r', false, $context);
 
   if (!isset($http_response_header[0])) {
-    exitFailure($proto . ' 504 Gateway Timeout', 'Unknown failure');
+    exitFailure('504 Gateway Timeout', 'Unknown failure');
   }
 
   $parsed = parseHeaders($http_response_header);
@@ -73,7 +80,7 @@ function openForDownload(string $url, string $proto) {
     } else {
       $statusLine = '502 Bad Gateway';
     }
-    exitFailure($proto . ' ' . $statusLine, 'Download failed');
+    exitFailure($statusLine, 'Download failed');
   }
 
   $contentLength = isset($parsed['CONTENT-LENGTH']) ? asInt($parsed['CONTENT-LENGTH']) : -1;
@@ -88,23 +95,18 @@ if (file_exists('tileserve-config.php')) {
   require_once 'tileserve-config.php';
 }
 
-$proto = 'HTTP/1.0';
-if (isset($_SERVER["SERVER_PROTOCOL"])) {
-  $proto = $_SERVER["SERVER_PROTOCOL"];
-}
-
 $mime = "image/jpeg";
 if (isset($_GET['mime']) && ($mime != $_GET['mime'])) {
-  exitFailure($proto . ' 415 Unsupported Media Type', 'Invalid mime type');
+  exitFailure('415 Unsupported Media Type', 'Invalid mime type');
 }
 
 if (!isset($_GET['url'])) {
-  exitFailure($proto . ' 400 Bad Request', 'Missing parameter: url. This is a temporary humanitarian service running until the 8th of April.');
+  exitFailure('400 Bad Request', 'Missing parameter: url. This is a temporary humanitarian service running until the 22th of April.');
 }
 
 $url = $_GET['url'];
 if (preg_match($allowedUrl, $url) !== 1) {
-  exitFailure($proto . ' 451 Unavailable For Legal Reasons', 'Invalid url');
+  exitFailure('451 Unavailable For Legal Reasons', 'Invalid url');
 }
 
 $url = preg_replace("~^https://~i", "http://", $url);
@@ -116,15 +118,15 @@ if (isset($allowedUserAgent)) {
   }
 
   if (preg_match($allowedUserAgent, $userAgent) !== 1) {
-    exitFailure($proto . ' 403 Forbidden', 'Invalid User-Agent');
+    exitFailure('403 Forbidden', 'Invalid User-Agent');
   }
 }
 
 if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
-  exitFailure($proto . ' 304 Not Modified');
+  exitFailure('304 Not Modified');
 }
 
-$stream = openForDownload($url, $proto);
+$stream = openForDownload($url);
 
 header("Content-type: " . $mime);
 header("Cache-Control: public, max-age=2592000, stale-while-revalidate=2592000, s-maxage=2592000");
