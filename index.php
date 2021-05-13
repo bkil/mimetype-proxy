@@ -122,7 +122,7 @@ if (isset($allowedUserAgent)) {
   }
 }
 
-if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
   exitFailure('304 Not Modified');
 }
 
@@ -131,8 +131,9 @@ $stream = openForDownload($url);
 header("Content-type: " . $mime);
 header("Cache-Control: public, max-age=2592000, stale-while-revalidate=2592000, s-maxage=2592000");
 header("Content-Transfer-Encoding: binary");
-header("Last-Modified: Fri, 04 Apr 2021 10:00:00 GMT");
-header("Expires: Fri, 30 Apr 2021 17:00:00 GMT");
+header("Last-Modified: Thu, 06 May 2021 10:00:00 GMT");
+header("Expires: Mon, 31 May 2021 17:00:00 GMT");
+header('ETag: "42"');
 ob_end_clean();
 
 fpassthru($stream);
