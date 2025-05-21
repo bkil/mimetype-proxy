@@ -109,7 +109,9 @@ if (preg_match($allowedUrl, $url) !== 1) {
   exitFailure('451 Unavailable For Legal Reasons', 'Invalid url');
 }
 
-$url = preg_replace("~^https://~i", "http://", $url);
+if (isset($_GET['strip_https'])) {
+    $url = preg_replace("~^https://~i", "http://", $url);
+}
 
 if (isset($allowedUserAgent)) {
   $userAgent = "";
@@ -131,8 +133,8 @@ $stream = openForDownload($url);
 header("Content-type: " . $mime);
 header("Cache-Control: public, max-age=2592000, stale-while-revalidate=2592000, s-maxage=2592000");
 header("Content-Transfer-Encoding: binary");
-header("Last-Modified: Thu, 06 May 2021 10:00:00 GMT");
-header("Expires: Mon, 31 May 2021 17:00:00 GMT");
+header("Last-Modified: Mon, 21 May 2025 10:00:00 GMT");
+header("Expires: Wed, 30 Jun 2025 17:00:00 GMT");
 header('ETag: "42"');
 ob_end_clean();
 
